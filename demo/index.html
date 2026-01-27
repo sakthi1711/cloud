@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Cloud Access | CP-ABE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #ec4899;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --surface: #ffffff;
+        }
+        
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            color: var(--dark);
+            margin: 0; 
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- CONTAINER --- */
+        .app-container {
+            width: 1000px;
+            height: 650px;
+            background: var(--surface);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            background: var(--surface);
+            padding: 20px 40px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 20px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .logout-btn {
+            background: #ef4444; color: white; padding: 8px 16px; border-radius: 8px; 
+            cursor: pointer; font-size: 14px; border: none; display: none;
+        }
+        .logout-btn:hover { background: #dc2626; }
+
+        /* --- SCREENS --- */
+        .screen { display: none; height: 100%; padding: 40px; overflow-y: auto; }
+        .screen.active { display: block; animation: fadeIn 0.5s; }
+
+        /* --- LOGIN SCREEN --- */
+        .login-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 40px; height: 100%; align-items: center;
+        }
+        .login-card {
+            background: var(--light); border: 2px solid transparent; padding: 40px; 
+            border-radius: 16px; text-align: center; cursor: pointer;
+        }
+        .login-card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(79, 70, 229, 0.1); }
+        .login-icon { font-size: 48px; margin-bottom: 20px; }
+        .login-title { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+        .login-desc { color: #64748b; font-size: 14px; }
+
+        /* --- DASHBOARDS --- */
+        .dashboard-header { margin-bottom: 30px; }
+        .dashboard-title { font-size: 28px; font-weight: 700; color: #1e293b; }
+        .dashboard-subtitle { color: #64748b; }
+
+        /* Controls */
+        .control-panel { background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        label { font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 5px; text-transform: uppercase; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 15px; background: white; }
+        
+        .btn-primary { 
+            background: var(--primary); color: white; width: 100%; padding: 15px; 
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;
+        }
+        .btn-primary:hover { background: #4338ca; }
+
+        /* File List */
+        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .file-card { 
+            border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; 
+            background: white; position: relative;
+        }
+        .file-icon { font-size: 24px; margin-bottom: 10px; color: var(--primary); }
+        .file-id { font-weight: 700; margin-bottom: 5px; }
+        .policy-badge { 
+            background: #dbeafe; color: #1e40af; padding: 4px 8px; 
+            border-radius: 4px; font-size: 11px; display: inline-block; margin-bottom: 15px;
+        }
+        .btn-decrypt { 
+            background: var(--dark); color: white; border: none; padding: 10px; 
+            border-radius: 6px; width: 100%; cursor: pointer; 
+        }
+        .btn-decrypt:hover { background: black; }
+
+        /* Console Log */
+        .console-log {
+            background: #0f172a; color: #22c55e; padding: 20px; border-radius: 12px;
+            font-family: 'Courier New', monospace; font-size: 13px; height: 180px; overflow-y: auto;
+            margin-top: 20px; border: 1px solid #334155;
+        }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #1e293b; padding-bottom: 2px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- Top Bar -->
+    <div class="header">
+        <div class="logo">
+            <span style="font-size: 24px;">☁️</span> SecureCloud <span style="color:#cbd5e1; font-weight:300;">| CP-ABE</span>
+        </div>
+        <button id="logoutBtn" class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <!-- 1. LOGIN SELECTION SCREEN -->
+    <div id="screen-login" class="screen active">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <h1 style="font-size: 32px; margin-bottom: 10px;">Select Login Type</h1>
+            <p style="color:#64748b">Choose your role to access the Secure Cloud Environment.</p>
+        </div>
+
+        <div class="login-grid">
+            <!-- Admin Card -->
+            <div class="login-card" onclick="login('admin')">
+                <div class="login-icon">👨‍💻</div>
+                <div class="login-title">Data Owner</div>
+                <div class="login-desc">Upload Datasets, Define Policies, and Encrypt Data using Multi-Authority Logic.</div>
+            </div>
+            
+            <!-- User Card -->
+            <div class="login-card" onclick="login('user')">
+                <div class="login-icon">👤</div>
+                <div class="login-title">Data User</div>
+                <div class="login-desc">Request Access, Verify Attributes, and Decrypt Outsourced Files.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. ADMIN DASHBOARD -->
+    <div id="screen-admin" class="screen">
+        <div class="dashboard-header">
+            <div class="dashboard-title">Data Owner Dashboard</div>
+            <div class="dashboard-subtitle">Encrypt and outsource data to Supabase Cloud</div>
+        </div>
+
+        <div class="control-panel">
+            <label>Selected Dataset</label>
+            <select disabled>
+                <option>HR_Dataset.csv (1470 Records)</option>
+            </select>
+
+            <label>Access Policy (CP-ABE Tree)</label>
+            <input type="text" value="Department:Sales AND JobRole:Executive" disabled 
+                   style="background: #e2e8f0; cursor: not-allowed; font-family: monospace;">
+
+            <button class="btn-primary" onclick="startUpload()">🚀 Encrypt & Upload to Cloud</button>
+        </div>
+
+        <div class="console-log" id="adminConsole">
+            <div class="log-entry">> System Ready. Waiting for input...</div>
+        </div>
+    </div>
+
+    <!-- 3. USER DASHBOARD -->
+    <div id="screen-user" class="screen">
+        <div class="dashboard-header">
+            <div class="dashboard-title">User Access Portal</div>
+            <div class="dashboard-subtitle">View outsourced files and request decryption keys</div>
+        </div>
+
+        <div class="control-panel">
+            <label>👤 Select Your Simulated Role (Your Keys)</label>
+            <div style="display: flex; gap: 15px;">
+                <select id="userDept">
+                    <option value="Sales">Department: Sales</option>
+                    <option value="HR">Department: HR</option>
+                    <option value="IT">Department: IT</option>
+                </select>
+                <select id="userRole">
+                    <option value="Executive">Role: Executive</option>
+                    <option value="Manager">Role: Manager</option>
+                    <option value="Intern">Role: Intern</option>
+                </select>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 15px;">Cloud Storage (Supabase)</h3>
+        <div id="fileList" class="file-grid">
+            <!-- Files inject here -->
+        </div>
+
+        <div class="console-log" id="userConsole">
+            <div class="log-entry">> Connected to Attribute Authority.</div>
+            <div class="log-entry">> Keys loaded based on selection above.</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const API_URL = "http://localhost:8080/api";
+
+    // --- NAVIGATION ---
+    function login(role) {
+        document.getElementById('screen-login').classList.remove('active');
+        document.getElementById('logoutBtn').style.display = 'block';
+
+        if(role === 'admin') {
+            document.getElementById('screen-admin').classList.add('active');
+        } else {
+            document.getElementById('screen-user').classList.add('active');
+            loadFiles(); // Load files immediately
+        }
+    }
+
+    function logout() {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-login').classList.add('active');
+        document.getElementById('logoutBtn').style.display = 'none';
+        
+        // Clear logs
+        document.getElementById('adminConsole').innerHTML = '<div class="log-entry">> System Ready. Waiting for input...</div>';
+        document.getElementById('userConsole').innerHTML = '<div class="log-entry">> Connected to Attribute Authority.</div>';
+    }
+
+    function log(elementId, msg, color = '#22c55e') {
+        const el = document.getElementById(elementId);
+        el.innerHTML += `<div class="log-entry" style="color:${color}">> ${msg}</div>`;
+        el.scrollTop = el.scrollHeight;
+    }
+
+    // --- ADMIN LOGIC ---
+    async function startUpload() {
+        log('adminConsole', 'Initializing Attribute Optimizer (60% Selection)...', '#fbbf24');
+        
+        setTimeout(async () => {
+            log('adminConsole', 'Distributing Attributes across 3 Authorities...', '#60a5fa');
+            try {
+                const res = await fetch(`${API_URL}/upload`, { method: 'POST' });
+                const data = await res.json();
+                
+                log('adminConsole', '----------------------------------------', 'white');
+                log('adminConsole', `Upload Successful!`, '#4ade80');
+                log('adminConsole', `Fairness Score: ${data.fairness.toFixed(4)}`, '#4ade80');
+                log('adminConsole', `Optimized Attributes: ${data.optimized}`, '#4ade80');
+                log('adminConsole', 'Encrypted Ciphertext stored in Supabase.', 'white');
+            } catch(e) {
+                log('adminConsole', 'Error connecting to Java Server. Is APIServer.java running?', '#ef4444');
+            }
+        }, 1500);
+    }
+
+    // --- USER LOGIC ---
+    async function loadFiles() {
+        const container = document.getElementById('fileList');
+        container.innerHTML = '<p>Loading from Cloud...</p>';
+        
+        try {
+            const res = await fetch(`${API_URL}/files`);
+            const files = await res.json();
+            container.innerHTML = '';
+
+            files.forEach(f => {
+                container.innerHTML += `
+                <div class="file-card">
+                    <div class="file-icon">📄</div>
+                    <div class="file-id">${f.id}</div>
+                    <div class="policy-badge">🔒 ${f.policy}</div>
+                    <button class="btn-decrypt" onclick="requestAccess('${f.id}')">🔓 Attempt Decrypt</button>
+                </div>`;
+            });
+        } catch(e) {
+            container.innerHTML = '<p style="color:red">Cloud Offline.</p>';
+        }
+    }
+
+    async function requestAccess(fileId) {
+        const dept = document.getElementById('userDept').value;
+        const role = document.getElementById('userRole').value;
+        
+        log('userConsole', `Requesting ${fileId}...`, 'white');
+        log('userConsole', `Sending User Attributes: [${dept}, ${role}] to Cloud...`, '#fbbf24');
+
+        try {
+            const res = await fetch(`${API_URL}/access`, {
+                method: 'POST',
+                body: JSON.stringify({ fileId, userDept: dept, userRole: role })
+            });
+            const data = await res.json();
+
+            if(data.status === 'Granted') {
+                log('userConsole', '✅ POLICY MATCH! Access Granted.', '#4ade80');
+                log('userConsole', 'Cloud performed Outsourced Decryption.', '#4ade80');
+                log('userConsole', `Decrypted Data: ${JSON.stringify(data.data)}`, 'white');
+            } else {
+                log('userConsole', '❌ ACCESS DENIED.', '#ef4444');
+                log('userConsole', 'Reason: User attributes do not satisfy file policy.', '#ef4444');
+            }
+        } catch(e) {
+            log('userConsole', 'Server Error.', '#ef4444');
+        }
+    }
+</script>
+
+</body>
+</html>
