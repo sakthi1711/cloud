@@ -1,0 +1,9 @@
+{
+    "chat.agent.thinking.generateTitles": false,
+    "java.project.sourcePaths": [
+        "src"
+    ],
+    "java.project.referencedLibraries": [
+        ".vscode\\lib\\cloudsim-3.0.3.jar"
+    ]
+}

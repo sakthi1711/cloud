@@ -1,0 +1,12 @@
+1. Load IBM HR dataset
+2. Create users (user1, user2, ...)
+3. Data Owner uploads file
+4. Data Owner defines CP-ABE policy
+5. Encrypt file using Grouped CP-ABE
+6. Store encrypted file in CloudSim
+7. User selects userId and requests file
+8. Cloud performs outsourced decryption (CloudSim Cloudlet)
+9. Policy evaluated
+10. Access granted / denied
+11. Print encryption & decryption times
+    
